@@ -1113,12 +1113,26 @@ class FlowBatchContentScript {
 
     this.log('Found Add button, clicking...', 'info');
     await this.clickElement(uploadButton);
-    await this.sleep(400); // Further optimized from 800ms
+    await this.sleep(1500); // Increased from 400ms to allow dialog to appear
 
-    // Wait for upload dialog and find file input
-    const fileInput = await this.findFileInput();
+    // Wait for upload dialog and find file input with retry
+    let fileInput = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      fileInput = await this.findFileInput();
+      if (fileInput) break;
+
+      this.log(`File input not found, attempt ${attempt}/3, waiting...`, 'warning');
+      await this.sleep(1000);
+    }
+
     if (!fileInput) {
-      throw new Error('File input not found after clicking Add button');
+      // Log more debug info
+      const allInputs = document.querySelectorAll('input');
+      this.log(`Total inputs on page: ${allInputs.length}`, 'info');
+      allInputs.forEach((inp, idx) => {
+        this.log(`Input ${idx}: type=${inp.type}, id=${inp.id}, class=${inp.className}`, 'info');
+      });
+      throw new Error('File input not found after clicking Add button. Check console for debug info.');
     }
 
     // CRITICAL FIX: Use the reconstructed File object directly
