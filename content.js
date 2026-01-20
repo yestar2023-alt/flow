@@ -1586,7 +1586,11 @@ class FlowBatchContentScript {
       // Strategy 5: Fallback - Button containing 'add' text directly
       '//button[contains(normalize-space(.), "add")]',
       // Strategy 6: Fallback - Button near the prompt textarea
-      `//textarea[@id="PINHOLE_TEXT_AREA_ELEMENT_ID"]/following::button[.//i[contains(text(), "add")]][1]`
+      `//textarea[@id="PINHOLE_TEXT_AREA_ELEMENT_ID"]/following::button[.//i[contains(text(), "add")]][1]`,
+      // Strategy 7: Chinese "Add" button
+      '//button[contains(normalize-space(.), "添加")]',
+      // Strategy 8: Chinese "Upload" button
+      '//button[contains(normalize-space(.), "上传")]'
     ];
 
     for (let i = 0; i < strategies.length; i++) {
@@ -1751,7 +1755,13 @@ class FlowBatchContentScript {
       '//button[@type="submit"]',
       // Strategy 6: Fallback - Button containing generate/create text
       '//button[contains(normalize-space(.), "Generate")]',
-      '//button[contains(normalize-space(.), "Create")]'
+      '//button[contains(normalize-space(.), "Create")]',
+      // Strategy 7: Chinese "Generate" button
+      '//button[contains(normalize-space(.), "生成")]',
+      // Strategy 8: Chinese "Create" button
+      '//button[contains(normalize-space(.), "创建")]',
+      // Strategy 9: Chinese "Submit" button
+      '//button[contains(normalize-space(.), "提交")]'
     ];
 
     for (let i = 0; i < strategies.length; i++) {
