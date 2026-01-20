@@ -830,6 +830,7 @@ class FlowBatchContentScript {
     const isPortrait = cropMode === 'portrait' || cropMode === '9:16';
     const iconText = isPortrait ? 'crop_portrait' : 'crop_landscape';
     const labelText = isPortrait ? 'Portrait (9:16)' : 'Landscape (16:9)';
+    const labelTextCN = isPortrait ? '竖屏 (9:16)' : '横屏 (16:9)';
 
     this.log(`Setting global aspect ratio to: ${labelText} (icon: ${iconText})`, 'info');
 
@@ -1027,7 +1028,8 @@ class FlowBatchContentScript {
 
       for (const span of allSpans) {
         const spanText = (span.textContent || span.innerText || '').trim();
-        if (!spanText.includes('Portrait') && !spanText.includes('Landscape')) continue;
+        if (!spanText.includes('Portrait') && !spanText.includes('Landscape') &&
+          !spanText.includes('竖屏') && !spanText.includes('横屏')) continue;
 
         // Check all icons, not just material-icons
         const icons = span.querySelectorAll('i');
@@ -1361,6 +1363,7 @@ class FlowBatchContentScript {
     if (cropMode) {
       const isPortrait = cropMode === 'portrait' || cropMode === '9:16';
       const targetText = isPortrait ? 'Portrait' : 'Landscape';
+      const targetTextCN = isPortrait ? '竖屏' : '横屏';
       const targetRatio = isPortrait ? '9:16' : '16:9';
       const iconText = isPortrait ? 'crop_9_16' : 'crop_16_9';
 
@@ -1377,7 +1380,8 @@ class FlowBatchContentScript {
         let aspectRatioButton = null;
         for (const btn of allButtons) {
           const btnText = (btn.textContent || btn.innerText || '').trim();
-          if (btnText.includes('Portrait') || btnText.includes('Landscape')) {
+          if (btnText.includes('Portrait') || btnText.includes('Landscape') ||
+            btnText.includes('竖屏') || btnText.includes('横屏')) {
             aspectRatioButton = btn;
             this.log(`找到裁剪比例下拉按钮: "${btnText}"`, 'info');
             break;
@@ -1459,7 +1463,8 @@ class FlowBatchContentScript {
 
                 const optText = (opt.textContent || opt.innerText || '').trim();
                 if (!optText.includes('Portrait') && !optText.includes('Landscape') &&
-                  !optText.includes('9:16') && !optText.includes('16:9')) {
+                  !optText.includes('9:16') && !optText.includes('16:9') &&
+                  !optText.includes('竖屏') && !optText.includes('横屏')) {
                   continue;
                 }
 
