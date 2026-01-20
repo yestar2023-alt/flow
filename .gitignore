@@ -1,0 +1,60 @@
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Claude/Cursor 设置
+.claude/
+
+# 临时文件
+*.tmp
+*.log
+*.cache
+*.temp
+
+# 构建文件
+dist/
+build/
+*.zip
+*.crx
+*.pem
+
+# 依赖文件（如果有）
+node_modules/
+package-lock.json
+yarn.lock
+
+# 环境变量文件
+.env
+.env.local
+
+# Chrome 扩展打包文件
+*.crx
+*.pem
+*.zip
+
+# 测试文件
+test/
+tests/
+__tests__/
+
+# 备份文件
+*.bak
+*.backup
+*~
+

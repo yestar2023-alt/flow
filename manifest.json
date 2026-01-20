@@ -1,0 +1,57 @@
+{
+  "name": "Flow批量上传",
+  "description": "Flow 批量处理：批量上传、裁剪、生成、下载重命名。",
+  "version": "1.2.0",
+  "manifest_version": 3,
+  "author": "贾羽JUGO",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "launcher.html",
+    "default_title": "Flow批量上传",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "downloads",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://labs.google/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://labs.google/fx/tools/flow*",
+        "https://labs.google/fx/*/tools/flow*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "popup.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

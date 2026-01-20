@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowBatchPilot 2.0</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --primary: #5E5CE6;
+      --primary-dark: #4A4AE8;
+      --primary-light: #7A7AFF;
+      --secondary: #34C759;
+      --warning: #FF9500;
+      --error: #FF3B30;
+      --surface: #1C1C1E;
+      --surface-elevated: #2C2C2E;
+      --surface-border: #38383A;
+      --text-primary: #FFFFFF;
+      --text-secondary: #AEAEB2;
+      --text-tertiary: #8E8E93;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 20px;
+      --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-family-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family-primary);
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);
+      color: var(--text-primary);
+      width: 480px;
+      min-height: 580px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .header {
+      padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-elevated);
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary-light);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .app-version {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .app-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .main-container {
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xl);
+    }
+
+    .input-section,
+    .status-section {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      border: 1px solid var(--surface-border);
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .section-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--primary);
+    }
+
+    .input-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .input-label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+      font-weight: 500;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: var(--spacing-md);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-family: var(--font-family-mono);
+      font-size: 12px;
+      resize: vertical;
+      transition: all 0.2s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.1);
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .file-input {
+      position: absolute;
+      left: -9999px;
+    }
+
+    .file-input-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      width: 100%;
+      padding: var(--spacing-md);
+      background: var(--surface);
+      border: 2px dashed var(--surface-border);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .file-input-button:hover {
+      border-color: var(--primary);
+      background: rgba(94, 92, 230, 0.05);
+      color: var(--primary-light);
+    }
+
+    .file-input-button.has-files {
+      border-style: solid;
+      border-color: var(--secondary);
+      background: rgba(52, 199, 89, 0.1);
+      color: var(--secondary);
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+
+    select {
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .task-preview {
+      margin-top: var(--spacing-md);
+      max-height: 280px;
+      overflow-y: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--surface-border);
+    }
+
+    .preview-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+
+    .preview-table th {
+      background: var(--surface);
+      color: var(--text-tertiary);
+      font-weight: 500;
+      padding: var(--spacing-sm);
+      text-align: left;
+      border-bottom: 1px solid var(--surface-border);
+      position: sticky;
+      top: 0;
+    }
+
+    .preview-table td {
+      padding: 6px var(--spacing-sm);
+      border-bottom: 1px solid rgba(56, 56, 58, 0.3);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+
+    .task-index {
+      font-family: var(--font-family-mono);
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+
+    .task-prompt {
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-filename {
+      font-family: var(--font-family-mono);
+      color: var(--primary-light);
+      font-size: 10px;
+      max-width: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preview-empty {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+
+    .task-thumbnail {
+      width: 50px;
+      height: 50px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 2px solid var(--surface-border);
+      background: #333;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .task-thumbnail:hover {
+      transform: scale(4);
+      z-index: 9999;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
+      border-color: var(--primary);
+    }
+
+    .thumbnail-cell {
+      padding: 4px !important;
+      width: 58px;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--text-tertiary);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+
+    .drag-handle:hover {
+      color: var(--primary-light);
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .preview-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .preview-table tbody tr[draggable="true"] {
+      cursor: move;
+    }
+
+    .preview-table tbody tr[draggable="true"]:hover {
+      background: rgba(94, 92, 230, 0.08);
+    }
+
+    .preview-table tbody tr.dragging {
+      opacity: 0.4;
+      background: var(--primary) !important;
+    }
+
+    .preview-table tbody tr.drag-over {
+      background: rgba(94, 92, 230, 0.25) !important;
+      box-shadow: inset 0 -2px 0 var(--primary);
+    }
+
+    .delete-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .delete-btn:hover {
+      background: rgba(255, 59, 48, 0.15);
+      color: var(--error);
+    }
+
+    .delete-btn:active {
+      transform: scale(0.9);
+    }
+
+    .reorder-hint {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: var(--spacing-xs);
+      padding: var(--spacing-xs);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-indicator.idle {
+      background: rgba(142, 142, 147, 0.1);
+      color: var(--text-tertiary);
+    }
+
+    .status-indicator.running {
+      background: rgba(52, 199, 89, 0.1);
+      color: var(--secondary);
+    }
+
+    .status-indicator.paused {
+      background: rgba(255, 149, 0, 0.1);
+      color: var(--warning);
+    }
+
+    .status-indicator.error {
+      background: rgba(255, 59, 48, 0.1);
+      color: var(--error);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: var(--radius-sm);
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .metric-item {
+      text-align: center;
+      padding: var(--spacing-sm);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--surface-border);
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary-light);
+      display: block;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    .log-container {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-md);
+      max-height: 100px;
+      overflow-y: auto;
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      border: 1px solid var(--surface-border);
+    }
+
+    .log-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-xs);
+      opacity: 0.8;
+    }
+
+    .log-entry:last-child {
+      margin-bottom: 0;
+      opacity: 1;
+    }
+
+    .log-timestamp {
+      color: var(--text-tertiary);
+      font-size: 10px;
+      min-width: 50px;
+    }
+
+    .log-message {
+      flex: 1;
+      color: var(--text-secondary);
+    }
+
+    .log-message.success {
+      color: var(--secondary);
+    }
+
+    .log-message.warning {
+      color: var(--warning);
+    }
+
+    .log-message.error {
+      color: var(--error);
+    }
+
+    .control-section {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: var(--spacing-sm);
+    }
+
+    .btn {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-xs);
+      font-family: var(--font-family-primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-secondary {
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--surface-border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--surface);
+      border-color: var(--primary);
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #D70015;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--surface);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface-border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-tertiary);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="app-title">
+      <div class="app-icon">FP</div><span>Flow批量上传</span>
+    </div>
+    <div class="app-version">Flow Labs 批量自动化控制台 v1.2.0</div>
+  </div>
+
+  <div class="main-container">
+    <div class="input-section">
+      <div class="section-title">
+        <svg class="section-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+          <path fill-rule="evenodd"
+            d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" />
+        </svg>
+        数据配置
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">视频提示词 (每行一个)</label>
+        <textarea id="promptInput" placeholder="美丽的日出风景&#10;城市夜景延时摄影&#10;海浪拍打礁石&#10;森林小径漫步"></textarea>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">图片文件夹</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="imageFolder" webkitdirectory multiple class="file-input">
+          <label for="imageFolder" class="file-input-button" id="folderLabel">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+            </svg>
+            <span id="folderText">选择图片文件夹...</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="input-group">
+          <label class="input-label">生成模式</label>
+          <select id="flowMode">
+            <option value="text_to_video">Text to Video</option>
+            <option value="frames_to_video">Frames to Video</option>
+            <option value="ingredients_to_video">Ingredients to Video</option>
+            <option value="create_image">Create Image</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">裁剪比例</label>
+          <select id="cropMode">
+            <option value="portrait">9:16 (竖版)</option>
+            <option value="landscape">16:9 (横版)</option>
+            <option value="square">1:1 (正方形)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="task-preview">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th width="28"></th>
+              <th width="58">预览</th>
+              <th width="28">#</th>
+              <th>提示词</th>
+              <th width="60">文件名</th>
+              <th width="32"></th>
+            </tr>
+          </thead>
+          <tbody id="previewBody">
+            <tr>
+              <td colspan="6" class="preview-empty">请输入提示词并选择图片文件夹</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="reorder-hint" id="reorderHint" style="display: none;">
+        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
+        </svg>
+        拖拽调整顺序 | 悬停放大预览 | 点击 × 删除图片
+      </div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-header">
+        <div class="section-title">
+          <svg class="section-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
+          </svg>
+          状态监控
+        </div>
+        <div class="status-indicator idle" id="statusIndicator">
+          <div class="status-dot"></div><span id="statusText">空闲</span>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-item"><span class="metric-value" id="currentTask">-</span>
+          <div class="metric-label">当前任务</div>
+        </div>
+        <div class="metric-item"><span class="metric-value" id="successCount">0</span>
+          <div class="metric-label">成功</div>
+        </div>
+        <div class="metric-item"><span class="metric-value" id="failCount">0</span>
+          <div class="metric-label">失败</div>
+        </div>
+      </div>
+
+      <div class="log-container" id="logContainer">
+        <div class="log-entry"><span class="log-timestamp">--:--</span><span class="log-message">系统就绪，等待任务配置...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <button class="btn btn-primary" id="startBtn">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+        </svg>
+        开始队列
+      </button>
+      <button class="btn btn-secondary" id="pauseBtn" disabled>
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" />
+        </svg>
+        暂停
+      </button>
+      <button class="btn btn-danger" id="clearBtn">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
+        </svg>
+        清空
+      </button>
+    </div>
+
+    <div style="text-align: center;">
+      <button class="btn btn-secondary" id="testConnectionBtn"
+        style="width: 100%; padding: 8px; font-size: 12px; border: 1px dashed var(--surface-border);">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
+        </svg>
+        测试连接
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
