@@ -586,7 +586,8 @@ class FlowBatchContentScript {
     const modeButton = await this.findModeButton();
 
     if (!modeButton) {
-      this.log('Mode button not found, assuming correct mode', 'warning');
+      this.log('Mode button not found, will prompt for manual selection', 'warning');
+      await this.promptManualModeSelection(targetMode);
       return;
     }
 
@@ -602,32 +603,214 @@ class FlowBatchContentScript {
     this.log(`🔄 Switching to ${targetMode} mode...`, 'warning');
     this.logToPopup(`正在切换到 ${this.getModeText(targetMode)} 模式...`, 'warning');
 
-    // Click mode button to open dropdown
-    await this.clickElement(modeButton);
-    await this.sleep(500);
+    // Try automatic mode switch first
+    let autoSwitchSuccess = false;
 
-    // Find and click target mode option
-    const targetOption = await this.findModeOption(targetMode);
-    if (!targetOption) {
-      throw new Error(`Failed to find ${targetMode} mode option`);
+    try {
+      // Click mode button to open dropdown
+      await this.clickElement(modeButton);
+      await this.sleep(500);
+
+      // Find and click target mode option
+      const targetOption = await this.findModeOption(targetMode);
+      if (targetOption) {
+        await this.clickElement(targetOption);
+        await this.sleep(2000);
+
+        // Verify mode switch was successful
+        const verificationButton = await this.findModeButton();
+        const verificationText = this.extractModeText(verificationButton);
+
+        if (this.isCorrectMode(verificationText, targetMode)) {
+          this.log('✅ Mode switch successful', 'success');
+          this.logToPopup(`✅ 已切换到 ${this.getModeText(targetMode)} 模式`, 'success');
+          autoSwitchSuccess = true;
+        }
+      }
+    } catch (error) {
+      this.log(`Auto mode switch failed: ${error.message}`, 'warning');
     }
 
-    await this.clickElement(targetOption);
-    await this.sleep(2000); // Increased from 1000ms to allow UI to fully update
+    // If automatic switch failed, prompt for manual selection
+    if (!autoSwitchSuccess) {
+      this.log('⚠️ Automatic mode switch failed, prompting for manual selection...', 'warning');
+      this.logToPopup(`⚠️ 自动切换失败，请手动选择模式...`, 'warning');
+      await this.promptManualModeSelection(targetMode);
+    }
+  }
 
-    // Verify mode switch was successful
-    const verificationButton = await this.findModeButton();
-    const verificationText = this.extractModeText(verificationButton);
+  // NEW: Prompt user for manual mode selection
+  async promptManualModeSelection(targetMode) {
+    const targetModeText = this.getModeText(targetMode);
 
-    if (this.isCorrectMode(verificationText, targetMode)) {
-      this.log('✅ Mode switch successful', 'success');
-      this.logToPopup(`✅ 已切换到 ${this.getModeText(targetMode)} 模式`, 'success');
+    this.log(`Prompting user to manually select: ${targetModeText}`, 'info');
+    this.logToPopup(`🔔 请手动选择 "${targetModeText}" 模式，完成后点击确认`, 'warning');
+
+    // Show a floating confirmation dialog
+    const confirmed = await this.showManualModeConfirmDialog(targetModeText);
+
+    if (confirmed) {
+      this.log('✅ User confirmed manual mode selection', 'success');
+      this.logToPopup(`✅ 已确认手动选择模式，继续处理...`, 'success');
+
+      // Brief delay to allow any UI updates
+      await this.sleep(500);
     } else {
-      // CRITICAL FIX: Don't throw error, just warn and continue
-      // The mode selection click was successful, UI might just be slow to update
-      this.log(`⚠️ Mode verification unclear. Current: "${verificationText}", Target: ${targetMode}. Continuing anyway...`, 'warning');
-      this.logToPopup(`⚠️ 模式切换完成，继续处理...`, 'warning');
+      // User cancelled - pause the queue
+      this.log('❌ User cancelled manual mode selection', 'warning');
+      this.logToPopup(`❌ 用户取消了模式选择，队列已暂停`, 'warning');
+      throw new Error('User cancelled manual mode selection');
     }
+  }
+
+  // NEW: Show a floating dialog for manual mode confirmation
+  async showManualModeConfirmDialog(targetModeText) {
+    return new Promise((resolve) => {
+      // Remove any existing dialog
+      const existingDialog = document.getElementById('flow-batch-mode-dialog');
+      if (existingDialog) {
+        existingDialog.remove();
+      }
+
+      // Create dialog container
+      const dialog = document.createElement('div');
+      dialog.id = 'flow-batch-mode-dialog';
+      dialog.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 999999;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        ">
+          <div style="
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            color: white;
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 16px;
+            ">
+              <div style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, #f39c12, #e74c3c);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+              ">⚠️</div>
+              <div>
+                <div style="font-size: 18px; font-weight: 600;">需要手动选择模式</div>
+                <div style="font-size: 12px; color: #aaa;">Manual Mode Selection Required</div>
+              </div>
+            </div>
+            
+            <div style="
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 20px;
+              border-left: 3px solid #f39c12;
+            ">
+              <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.6;">
+                自动切换模式失败，请在页面上手动选择：
+              </p>
+              <div style="
+                background: rgba(94, 92, 230, 0.2);
+                color: #7c7aff;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 16px;
+                text-align: center;
+              ">${targetModeText}</div>
+              <p style="margin: 12px 0 0 0; font-size: 13px; color: #aaa;">
+                选择完成后点击下方「确认继续」按钮
+              </p>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+              <button id="flow-batch-mode-cancel" style="
+                flex: 1;
+                padding: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                background: transparent;
+                color: #aaa;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+              ">取消并暂停</button>
+              <button id="flow-batch-mode-confirm" style="
+                flex: 2;
+                padding: 12px;
+                border: none;
+                border-radius: 8px;
+                background: linear-gradient(135deg, #5E5CE6, #7B68EE);
+                color: white;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 4px 12px rgba(94, 92, 230, 0.4);
+              ">✓ 确认继续</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(dialog);
+
+      // Add event listeners
+      const confirmBtn = document.getElementById('flow-batch-mode-confirm');
+      const cancelBtn = document.getElementById('flow-batch-mode-cancel');
+
+      // Hover effects
+      confirmBtn.addEventListener('mouseenter', () => {
+        confirmBtn.style.transform = 'translateY(-2px)';
+        confirmBtn.style.boxShadow = '0 6px 16px rgba(94, 92, 230, 0.5)';
+      });
+      confirmBtn.addEventListener('mouseleave', () => {
+        confirmBtn.style.transform = 'translateY(0)';
+        confirmBtn.style.boxShadow = '0 4px 12px rgba(94, 92, 230, 0.4)';
+      });
+
+      cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+        cancelBtn.style.color = 'white';
+      });
+      cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        cancelBtn.style.color = '#aaa';
+      });
+
+      // Click handlers
+      confirmBtn.addEventListener('click', () => {
+        dialog.remove();
+        resolve(true);
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        dialog.remove();
+        resolve(false);
+      });
+    });
   }
 
   async ensureGlobalSettings(metadata) {
@@ -1323,17 +1506,69 @@ class FlowBatchContentScript {
       }
     }
 
-    // 3. 点击保存按钮
+    // 3. 点击保存按钮 - 支持多种语言版本
     try {
-      const saveButton = await this.waitForElement(
+      let saveButton = null;
+
+      // 多种策略查找裁剪保存按钮
+      const saveButtonStrategies = [
+        // 策略1: 中文版本 "剪裁并保存"
+        '//button[contains(normalize-space(.), "剪裁并保存")]',
+        // 策略2: 英文版本 "Crop and Save"
         '//button[contains(normalize-space(.), "Crop and Save")]',
-        6000
-      );
-      await this.clickElement(saveButton);
-      await this.sleep(800);
-      this.log('裁剪完成', 'success');
+        // 策略3: 包含 crop 图标的按钮
+        '//button[.//i[contains(@class, "material-icons") and contains(text(), "crop")]]',
+        // 策略4: 中文变体 "裁剪并保存"
+        '//button[contains(normalize-space(.), "裁剪并保存")]',
+        // 策略5: 包含 "保存" 和 crop 相关的按钮
+        '//button[contains(normalize-space(.), "保存") and .//i[contains(text(), "crop")]]'
+      ];
+
+      for (let i = 0; i < saveButtonStrategies.length; i++) {
+        try {
+          this.log(`尝试策略 ${i + 1} 查找裁剪保存按钮...`, 'info');
+          saveButton = await this.waitForElement(saveButtonStrategies[i], 2000);
+          if (saveButton) {
+            this.log(`使用策略 ${i + 1} 找到裁剪保存按钮`, 'success');
+            break;
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+
+      // 备用方案：遍历所有按钮查找
+      if (!saveButton) {
+        this.log('使用备用方案查找裁剪保存按钮...', 'info');
+        const allButtons = document.querySelectorAll('button');
+        for (const btn of allButtons) {
+          const btnText = (btn.textContent || btn.innerText || '').trim();
+          const hasCropIcon = btn.querySelector('i')?.textContent?.includes('crop');
+
+          if ((btnText.includes('剪裁并保存') ||
+            btnText.includes('裁剪并保存') ||
+            btnText.includes('Crop and Save') ||
+            btnText.includes('crop') && btnText.includes('保存')) ||
+            (hasCropIcon && btnText.includes('保存'))) {
+            saveButton = btn;
+            this.log(`备用方案找到按钮: "${btnText}"`, 'success');
+            break;
+          }
+        }
+      }
+
+      if (saveButton) {
+        await this.clickElement(saveButton);
+        await this.sleep(800);
+        this.log('✅ 裁剪完成', 'success');
+        this.logToPopup('✅ 裁剪并保存完成', 'success');
+      } else {
+        this.log('⚠️ 未找到裁剪保存按钮，可能已自动保存或无需裁剪', 'warning');
+        this.logToPopup('⚠️ 未找到裁剪保存按钮', 'warning');
+      }
     } catch (error) {
       this.log(`裁剪保存失败: ${error.message}`, 'error');
+      this.logToPopup(`⚠️ 裁剪保存失败: ${error.message}`, 'warning');
     }
   }
 
